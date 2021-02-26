@@ -17,4 +17,4 @@ Note: This program take command line Input.
 - O(n)
 
 ## Referance Vedio
-[Bucket Sort](https://youtu.be/VuXbEb5ywrU "Youtube Vedio")
+[Bucket Sort](https://youtu.be/VuXbEb5ywrU "Youtube Vedio of geeksforgeeks")
