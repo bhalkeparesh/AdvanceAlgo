@@ -1,8 +1,8 @@
-##RUN:
+RUN:
 1. minHeap.py  : python3 minHeap.py 
 2. maxHeap.py  : python3 maxHeap.py
 
-#Time Complexity:
+Time Complexity:
 data structure : Binary heap
 language : Binary heap
 1. minHeap:
