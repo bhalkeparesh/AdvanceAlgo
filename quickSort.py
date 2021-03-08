@@ -1,3 +1,4 @@
+#get data from command line
 def getData():
 	a=list(map(int,input().split()))
 	return a
@@ -24,7 +25,6 @@ def quick_sort2(arr,low,high):
 def partition(arr,low,high):
 	pivot = findPivot(arr, low, high)
 	pivot_element = arr[pivot]
-	#print(pivot_element)
 	arr[low],arr[pivot]=arr[pivot],arr[low]
 	border = low
 	for i in range(low,high+1):
@@ -33,9 +33,6 @@ def partition(arr,low,high):
 			arr[i],arr[border] = arr[border],arr[i]
 	arr[border],arr[low]=arr[low],arr[border]
 	return border
-
-
-
 
 
 
