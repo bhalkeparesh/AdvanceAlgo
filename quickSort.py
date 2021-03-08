@@ -3,9 +3,10 @@ def getData():
 	a=list(map(int,input().split()))
 	return a
 
+#main fuction call
 def quick_sort(array):
 	quick_sort2(array,0,len(array)-1)
-
+#getting pivot
 def findPivot(arr,low,high):
 	mid =(low + high)//2
 	pivot = high
