@@ -40,3 +40,16 @@ def partition(arr,low,high):
 array = getData()
 quick_sort(array)
 print(array)
+
+
+
+def sample(arr):
+	result=[]
+	for i in arr:
+		if(i%2==0):
+			result.append(i)
+	odd=[]
+	if(not i%2==0):
+			result.append(i)
+	result.extend(odd)
+	return result
