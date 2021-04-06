@@ -1,45 +1,33 @@
-from Crypto.Hash import SHA256
-from collections import namedtuple
+class Node:
+  RED = True
+  BLACK = False
+
+  def __init__(self, key, color = RED):
+    if(type(color) != bool):
+      raise TypeError("Color Must be RED or BLACK")
+    self.color = color
+    self.key = key
+    self.left = self.right = self.parent = NilNode.instance()
+
+  def __nonzero__(self):
+    return True
+
+  def __bool__(self):
+    return True
 
 
-"""Rules: 
-1. Every black node must have red node children. 
-2. The distance from a node to its descendents has a uniform number of black nodes
-3. All leaves are black
-4. The root of the tree is black
-5. If it's your first time at Fight Club you have to fight
-"""
-
-def preorder_traversal(node, func=None):
-    if func:
-        func(node.value)
-    preorder_traversal(node.left)
-    preorder_traversal(node.right)
-
-def check_if_red(node):
-    return node != None and node.color == "R"
-
-class RedBlackNode:
-    def __init__(self, value, color="B"):
-        self.parent = None
-        self.color = None
-        self.right = None
-        self.left = None
-        self.value = value
-        self.digest = None
-
-class NilNode(RedBlackNode):
+class NilNode(Node):
   __instance__ = None
 
   @classmethod
   def instance(self):
-    if self.__instance__ is None:
+    if(self.__instance__ is None):
       self.__instance__ = NilNode()
     return self.__instance__
 
   def __init__(self):
-    self.color = 'B'
-    self.value = None
+    self.color = Node.BLACK
+    self.key = None
     self.left = self.right = self.parent = None
 
   def __nonzero__(self):
@@ -48,114 +36,248 @@ class NilNode(RedBlackNode):
   def __bool__(self):
     return False
 
-
-
 class RedBlackTree:
-    def __init__(self):
-        self.root = NilNode.instance()
+  def __init__(self):
+    self.root = NilNode.instance()
+    self.size = 0
 
-    def insert_helper(self, z):
-        y = NilNode.instance()
-        x = self.root
-        while x:
-            y = x
-            if z.value < x.value:
-                x = x.left
-            else:
-                x = x.right
-        z.parent = y
-        if not y:
-            self.root = z
+  def insert(self, Key):
+    x=Node(key)
+    self.__insert_helper(x)
+
+    x.color = Node.RED
+    while(x != self.root and x.parent.color == Node.RED):
+      if(x.parent == x.parent.parent.left):
+        y = x.parent.parent.right
+        if(y and y.color == Node.RED):
+          x.parent.color = Node.BLACK
+          y.color = Node.BLACK
+          x.parent.parent.color = Node.RED
+          x = x.parent.parent
         else:
-            if z.value < y.value:
-                y.left = z
-            else:
-                y.right = z
-        
-    def check_violations(self):
-        """Goes through tree and checks that all of the rules for RB are followed"""
-        pass
+          if(x == x.parent.right):
+            x = x.parent
+            self.__left_rotate(x)
+          x.parent.color = Node.BLACK
+          x.parent.parent.color = Node.RED
+          self.__right_rotate(x.parent.parent)
+      else:
+        y = x.parent.parent.left
+        if(y and y.color == Node.RED):
+          x.parent.color = Node.BLACK
+          y.color = Node.BLACK
+          x.parent.parent.color = Node.RED
+          x = x.parent.parent
+        else:
+          if(x == x.parent.left):
+            x = x.parent
+            self.__right_rotate(x)
+          x.parent.color = Node.BLACK
+          x.parent.parent.color = Node.RED
+          self.__left_rotate(x.parent.parent)
+    self.root.color = Node.BLACK
+
+  def delete(self, z):
+    if(not z.left or not z.right):
+      y = z
+    else:
+      y = self.successor(z)
+    if(not y.left):
+      x = y.right
+    else:
+      x = y.left
+    x.parent = y.parent
+
+    if(not y.parent):
+      self.root = x
+    else:
+      if(y == y.parent.left):
+        y.parent.left = x
+      else:
+        y.parent.right = x
+
+    if(y != z): z.key = y.key
+
+    if(y.color == Node.BLACK):
+      self.__delete_fixup(x)
+
+    self.size -= 1
+    return y
+
+  def minimum(self, x = None):
+    if(x is None): x = self.root
+    while( x.left):
+      x = x.left
+    return x
+
+  def maximum(self, x = None):
+    if( x is None): x = self.root
+    while( x.right):
+      x = x.right
+    return x
+
+  def successor(self, x):
+    if( x.right):
+      return self.minimum(x.right)
+    y = x.parent
+    while( y and x == y.right):
+      x = y
+      y = y.parent
+    return y
+
+  def predecessor(self, x):
+    if( x.left):
+      return self.maximum(x.left)
+    y = x.parent
+    while( y and x == y.left):
+      x = y
+      y = y.parent
+    return y
+
+  def inorder_walk(self, x = None):
+    if(x is None): x = self.root
+    x = self.minimum()
+    while(x):
+      yield x.key
+      x = self.successor(x)
+
+  def reverse_inorder_walk(self, x = None):
+    if(x is None): x = self.root
+    x = self.maximum()
+    while(x):
+      yield x.key
+      x = self.predecessor(x)
+
+  def search(self, key, x = None):
+    if(x is None): x = self.root
+    while(x and x.key != key):
+      if(key < x.key):
+        x = x.left
+      else:
+        x = x.right
+    return x
+
+  def is_empty(self):
+    return bool(self.root)
+
+  def black_height(self, x = None):
+    if(x is None): x = self.root
+    height = 0
+    while(x):
+      x = x.left
+      if(not x or x.is_black()):
+        height += 1
+    return height
+
+  def __left_rotate(self, x):
+    if(not x.right):
+      raise "x.right is nil!"
+    y = x.right
+    x.right = y.left
+    if(y.left): y.left.parent = x
+    y.parent = x.parent
+    if(not x.parent):
+      self.root = y
+    else:
+      if(x == x.parent.left):
+        x.parent.left = y
+      else:
+        x.parent.right = y
+    y.left = x
+    x.parent = y
+
+  def __right_rotate(self, x):
+    if(not x.left):
+      raise "x.left is nil!"
+    y = x.left
+    x.left = y.right
+    if(y.right): y.right.parent = x
+    y.parent = x.parent
+    if(not x.parent):
+      self.root = y
+    else:
+      if(x == x.parent.left):
+        x.parent.left = y
+      else:
+        x.parent.right = y
+    y.right = x
+    x.parent = y
+
+  def __insert_helper(self, z):
+    y = NilNode.instance()
+    x = self.root
+    while(x):
+      y = x
+      if(z.key < x.key):
+        x = x.left
+      else:
+        x = x.right
     
-    def recolor(self, node, color):
-        pass
+    z.parent = y
+    if(not y):
+      self.root = z
+    else:
+      if(z.key < y.key):
+        y.left = z
+      else:
+        y.right = z
+    
+    self.size += 1
 
-    def rotateLeft(self, root):
-        newRoot = root.right
-        #Root takes its right childs left node
-        root.right = newRoot.left
-        #Set parent as root
-        if newRoot.left != None:
-            newRoot.left.parent = root
-        #new root sets parent as root
-        newRoot.parent = root.parent
-        if newRoot.parent == None:
-            pass
-        elif root.parent.left == root:
-            newRoot.parent.left = newRoot
+  def __delete_fixup(self, x):
+    while(x != self.root and x.color == Node.BLACK):
+      if(x == x.parent.left):
+        w = x.parent.right
+        if(w.color == Node.RED):
+          w.color = Node.BLACK
+          x.parent.color = Node.RED
+          self.__left_rotate(x.parent)
+          w = x.parent.right
+        if(w.left.color == Node.BLACK and w.right.color == Node.BLACK):
+          w.color = Node.RED
+          x = x.parent
         else:
-            newRoot.parent.right = newRoot
-        # Set new roots left child as root
-        newRoot.left = root
-        # Set old roots parent as newRoot
-        root.parent = newRoot
-
-    def rotateRight(self, root):
-        newRoot = root.left
-        root.left = newRoot.right
-        if newRoot.right != None:
-            newRoot.right.parent = root
-        newRoot.parent = root.parent
-        if newRoot.parent == None:
-            pass
-        elif root.parent.right == root:
-            newRoot.parent.right = newRoot
+          if(w.right.color == Node.BLACK):
+            w.left.color = Node.BLACK
+            w.color = Node.RED
+            self.__right_rotate(w)
+            w = x.parent.right
+          w.color = x.parent.color
+          x.parent.color = Node.BLACK
+          w.right.color = Node.BLACK
+          self.__left_rotate(x.parent)
+          x = self.root
+      else:
+        w = x.parent.left
+        if(w.color == Node.RED):
+          w.color = Node.BLACK
+          x.parent.color = Node.RED
+          self.__right_rotate(x.parent)
+          w = x.parent.left
+        if(w.right.color == Node.BLACK and w.left.color == Node.BLACK):
+          w.color = Node.RED
+          x = x.parent
         else:
-            newRoot.parent.left = newRoot
-        newRoot.right = root
-        root.parent = newRoot
-
-    def insert(self, node):
-        self.insert_helper(node)
-        if self.root == None:
-            node.color = 'B'
-            self.root = node
-            return
-        node.color = 'R'
-        while node != self.root and node.parent.color == 'R':
-            if node.parent == node.parent.parent.left:
-                uncle = node.parent.parent.right
-                if uncle and uncle.color == 'R':
-                    node.parent.color = 'B'
-                    uncle.color = 'B'
-                    node.parent.parent.color = 'R'
-                    node = node.parent.parent
-                else:
-                    if node == node.parent.right:
-                        node = node.parent
-                        self.rotateLeft(node)
-                    node.parent.color = 'B'
-                    node.parent.parent.color = 'R'
-                    self.rotateRight(node.parent.parent)
-            else:
-                u = node.parent.parent.left
-                if node and node.color == 'R':
-                    node.parent.color = 'B'
-                    u.color = 'B'
-                    node.parent.parent.color = 'R'
-                    node = node.parent.parent
-                else:
-                    if node == node.parent.left:
-                        node = node.parent
-                        self.rotateRight(node)
-                    node.parent.color = 'B'
-                    node.parent.parent.color = 'R'
-                    self.rotateLeft(node.parent.parent)
-        self.root.color = 'B'
-
+          if(w.left.color == Node.BLACK):
+            w.right.color = Node.BLACK
+            w.color = Node.RED
+            self.__left_rotate(w)
+            w = x.parent.left
+          w.color = x.parent.color
+          x.parent.color = Node.BLACK
+          w.left.color = Node.BLACK
+          self.__right_rotate(x.parent)
+          x = self.root
+    x.color = Node.BLACK
+    
+  
 
 if __name__ == "__main__":
-    rb = RedBlackTree()
-    rb.insert(RedBlackNode(5))
-    print(rb.root.value)
-    rb.insert(RedBlackNode(10))
-    print(rb.root.right.value)
+  tree = RedBlackTree()
+  numbers = map(int,input().split())
+  for key in numbers:
+    tree.insert(key)
+
+
+  for key in tree.inorder_walk():
+    print("key = %s" % key)
